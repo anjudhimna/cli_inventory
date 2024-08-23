@@ -10,11 +10,11 @@ password = "openpgpwd"
 port = 5432
 
 conn = psycopg2.connect(
-host = host,
-dbname = database,
-user = user,
-password = password,
-port = port
+    host=host,
+    dbname=database,
+    user=user,
+    password=password,
+    port=port
 )
 cur = conn.cursor()
 
@@ -24,6 +24,10 @@ print("1) Product List")
 print("2) Add Product")
 print("3) Delete Product")
 print("4) Update Product")
+print("5) Search by product Name or Brand")
+print("6) Sort by Product Name")
+print("7) Sort by Product SKU")
+print("8) Sort by Product Quantity")
 choice = input("Enter Choice : ")
 choice = choice.strip()
 
@@ -41,6 +45,7 @@ def delete_row_from_csv(input_file, output_file, row_to_delete):
     with open(output_file, mode='w', newline='') as outfile:
         writer = csv.writer(outfile)
         writer.writerows(updated_rows)
+
 
 def update_row_in_csv(input_file, output_file, row_identifier, updates):
     # Read the CSV file and store its contents
@@ -62,81 +67,81 @@ def update_row_in_csv(input_file, output_file, row_identifier, updates):
         writer.writeheader()
         writer.writerows(rows)
 
+
 if (choice == "1"):
     print("Select product list")
     cur.execute("select * from product")
-    print("Here is the product list: Product Name,Brand,SKU,Quantity")
+    print(f"Total count {cur.rowcount}: Here is the product list: Product Name,Brand,SKU,Quantity")
     for records in cur.fetchall():
-         print(records)
+        print(records)
 
-elif(choice == "2"):
+elif (choice == "2"):
     print("Add new product")
     addProduct = input("Enter Product Name >>> ")
     prodbrand = input("Enter Product Brand >>> ")
     prodsku = input("Enter Product SKU >>> ")
     prodquantity = input("Enter Product Quantity >>> ")
 
-    if(addProduct==""):
+    if (addProduct == ""):
         print("Error: Please enter Product Name")
-    elif(prodbrand==""):
+    elif (prodbrand == ""):
         print("Error: Please enter Brand Name")
-    elif(prodsku==""):
+    elif (prodsku == ""):
         print("Error: Please enter Product SKU")
-    elif(prodquantity==""):
+    elif (prodquantity == ""):
         print("Error: Please enter Product Quantity")
-    elif(isinstance(prodquantity, int)==False):
-        print("Error: Product Quantity should be integer value")
     else:
-            #check if sku already exist
-            sqlselect = f"select * from product where product_sku = '{prodsku}'"
-            cur.execute(sqlselect)
+        # check if sku already exist
+        sqlselect = f"select * from product where product_sku = '{prodsku}'"
+        cur.execute(sqlselect)
+        conn.commit()
+        if cur.fetchall():
+            print("Error: Product SKU already exist, enter another SKU")
+        else:
+            product_add = "INSERT INTO product(product_name,product_sku, brand, quantity) VALUES (%s,%s,%s,%s) RETURNING id"
+            record_to_insert = (addProduct, f"POO{prodsku}", prodbrand, prodquantity)
+            result = cur.execute(product_add, record_to_insert)
             conn.commit()
-            if cur.fetchall():
-                print("Error: Product SKU already exist, enter another SKU")
-            else:
-                product_add = "INSERT INTO product(product_name,product_sku, brand, quantity) VALUES (%s,%s,%s,%s) RETURNING id"
-                record_to_insert = (addProduct, f"POO{prodsku}", prodbrand, prodquantity)
-                result = cur.execute(product_add, record_to_insert)
-                conn.commit()
-                lastInsertID = cur.fetchone()[0]
-                print(lastInsertID)
-                print("Success:Record inserted successfully")
-                conn.close()
+            lastInsertID = cur.fetchone()[0]
+            print(lastInsertID)
+            print("Success:Record inserted successfully")
+            conn.close()
 
-                datawithHeaders = (("ProductId" , "Product Name", "SKU", "Brand", "quantity"), (lastInsertID , addProduct, f"POO{prodsku}", prodbrand, prodquantity))
-                dataNoHeaders = (lastInsertID , addProduct, f"POO{prodsku}", prodbrand, prodquantity)
+            datawithHeaders = (("ProductId", "Product Name", "SKU", "Brand", "quantity"),
+                               (lastInsertID, addProduct, f"POO{prodsku}", prodbrand, prodquantity))
+            dataNoHeaders = (lastInsertID, addProduct, f"POO{prodsku}", prodbrand, prodquantity)
 
-                # check if csv file exist
-                my_file = pathlib.Path("product.csv")
+            # check if csv file exist
+            my_file = pathlib.Path("product.csv")
 
-                # if file not exist create new file
-                if my_file.is_file():
-                    with open('Product.csv', "a", newline="") as file:
-                        if file.writable():
-                            print("Success: Product.csv file exist")
-                            # append data in csv file
-                            writer = csv.writer(file)
-                            # Writing the data
-                            writer.writerows([dataNoHeaders])
-                            print(f"Data written to file")
-                        else:
-                            print("Error: File is not writable")
-                else:
-                    print("Error: file does not exist")
-                    # create csv file
-                    with open('Product.csv', 'x') as file:
-                        print("Success: file created successfully")
-                        # for line in data:
-                        print(datawithHeaders)
+            # if file not exist create new file
+            if my_file.is_file():
+                with open('Product.csv', "a", newline="") as file:
+                    if file.writable():
+                        print("Success: Product.csv file exist")
+                        # append data in csv file
                         writer = csv.writer(file)
                         # Writing the data
-                        writer.writerows(datawithHeaders)
+                        writer.writerows([dataNoHeaders])
                         print(f"Data written to file")
+                    else:
+                        print("Error: File is not writable")
+            else:
+                print("Error: file does not exist")
+                # create csv file
+                with open('Product.csv', 'x') as file:
+                    print("Success: file created successfully")
+                    # for line in data:
+                    print(datawithHeaders)
+                    writer = csv.writer(file)
+                    # Writing the data
+                    writer.writerows(datawithHeaders)
+                    print(f"Data written to file")
 
-elif(choice == "3"):
+elif (choice == "3"):
     print("Choice selected to delete the product")
     productId = input("Enter product id to delete>>>")
-    if(productId):
+    if (productId):
         # check if ID exist in DB or not
         sqlselectId = f"select * from product where id= '{productId}'"
         cur.execute(sqlselectId)
@@ -158,7 +163,7 @@ elif(choice == "3"):
             print("Error: The product id you enter is not correct.......")
     else:
         print("Error: Please enter product id")
-elif(choice == "4"):
+elif (choice == "4"):
     print("Update product choice selected.....")
     productId = input("Enter product id to be update>>>")
     # check if ID exist in DB or not
@@ -181,8 +186,9 @@ elif(choice == "4"):
         else:
             dataToUpdate = (prdName, prdBrand, prdquantity)
 
-            sqlUpdate = (f"update product set product_name='{prdName}' , brand='{prdBrand}' , quantity={prdquantity} where "
-                         f"id={productId}")
+            sqlUpdate = (
+                f"update product set product_name='{prdName}' , brand='{prdBrand}' , quantity={prdquantity} where "
+                f"id={productId}")
             cur.execute(sqlUpdate)
             conn.commit()
             print(f"{productId} productID Update in Database")
@@ -194,7 +200,7 @@ elif(choice == "4"):
             updates = {
                 'Product Name': prdName,
                 'Brand': prdName,
-                'quantity' :prdquantity
+                'quantity': prdquantity
 
             }
             update_row_in_csv(input_file, output_file, row_to_update, updates)
@@ -203,11 +209,22 @@ elif(choice == "4"):
     else:
         print("Error: The product id you enter is not correct.......")
 
+elif (choice == "5"):
+    print("Search by Product name or Brand")
+    search = input("Enter Product Name or Brand>>>")
+    if (search != ""):
+        sqlsearch = f"select * from product where product_name like '%{search}%' or brand like '%{search}%'"
+        searchquery = cur.execute(sqlsearch)
+        conn.commit()
+        print(f"{cur.rowcount} records found")
+        if cur.rowcount>0:
+            for records in cur.fetchall():
+                print(records)
+        else:
+            print("No record found")
+    else:
+        print("Error: Please enter search text")
+
+
 else:
     print("Error: You did not select a correct choice,start again")
-
-
-
-
-
-
