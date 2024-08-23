@@ -225,6 +225,44 @@ elif (choice == "5"):
     else:
         print("Error: Please enter search text")
 
+elif(choice == "6"):
+    print("Sort by product name")
+    order = input("Enter order ASC or Desc>>>")
+    sqlsearch = f"select * from product order by product_name {order}"
+    cur.execute(sqlsearch)
+    conn.commit()
+    print(f"{cur.rowcount} records found")
+    if cur.rowcount > 0:
+        for records in cur.fetchall():
+            print(records)
+    else:
+        print("No record found")
+
+elif(choice == "7"):
+    print("Sort by product SKU")
+    order = input("Enter order ASC or Desc>>>")
+    sqlsearchsku = f"select * from product order by product_sku {order}"
+    cur.execute(sqlsearchsku)
+    conn.commit()
+    print(f"{cur.rowcount} records found")
+    if cur.rowcount > 0:
+        for records in cur.fetchall():
+            print(records)
+    else:
+        print("No record found")
+
+elif(choice == "8"):
+    print("Sort by product Quantity")
+    order = input("Enter order ASC or Desc>>>")
+    searchquantity = f"select * from product order by quantity {order}"
+    cur.execute(searchquantity)
+    conn.commit()
+    print(f"{cur.rowcount} records found")
+    if cur.rowcount > 0:
+        for records in cur.fetchall():
+            print(records)
+    else:
+        print("No record found")
 
 else:
     print("Error: You did not select a correct choice,start again")
